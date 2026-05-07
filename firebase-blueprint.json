@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "xp": { "type": "number" },
+        "coins": { "type": "number" },
+        "gems": { "type": "number" }
+      },
+      "required": ["uid", "username", "email"]
+    },
+    "HighScore": {
+      "title": "HighScore",
+      "description": "User high score entry",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "score": { "type": "number" },
+        "level": { "type": "number" }
+      },
+      "required": ["userId", "score"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/highscores/{userId}": {
+      "schema": "HighScore",
+      "description": "High scores"
+    }
+  }
+}

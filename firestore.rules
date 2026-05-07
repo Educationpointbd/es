@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function isAdmin() { return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // Validation Helpers
+    function isValidUser(data) {
+      return data.username is string && data.username.size() >= 3 && data.username.size() <= 20
+        && data.email is string && data.email.size() <= 50
+        && data.xp is number && data.coins is number && data.gems is number;
+    }
+    
+    function isValidHighScore(data) {
+      return data.userId is string && data.score is number && data.level is number;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /users/{uid} {
+      allow get: if isSignedIn() && request.auth.uid == uid;
+      allow create: if isSignedIn() && request.auth.uid == uid && isValidUser(incoming()) && incoming().uid == uid;
+      allow update: if isSignedIn() && request.auth.uid == uid && isValidUser(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['username', 'xp', 'coins', 'gems']);
+    }
+
+    match /highscores/{userId} {
+      allow list: if isSignedIn(); // Simplified for now, will improve with Pillars
+      allow get: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidHighScore(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidHighScore(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['score', 'level']);
+    }
+  }
+}
